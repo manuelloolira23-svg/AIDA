@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examen Certificación AIDA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        
+        .answer-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .answer-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .slide-in { animation: slideIn 0.4s ease-out; }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .correct-anim { animation: pulse-green 0.5s; background-color: #10b981 !important; color: white !important; border-color: #10b981 !important; }
+        .wrong-anim { animation: shake 0.4s; background-color: #ef4444 !important; color: white !important; border-color: #ef4444 !important; }
+
+        @keyframes pulse-green {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden min-h-[600px] relative flex flex-col">
+        
+        <!-- Header -->
+        <div class="bg-indigo-900 p-6 text-white text-center">
+            <h1 class="font-bold text-xl">Evaluación Final</h1>
+            <p class="text-indigo-300 text-xs mt-1">Modelo AIDA - Portabilidad</p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-slate-200 h-2">
+            <div id="progress-bar" class="bg-green-500 h-2 w-0 transition-all duration-300"></div>
+        </div>
+
+        <!-- PANTALLA DE INICIO -->
+        <div id="start-screen" class="flex-1 flex flex-col items-center justify-center p-8 text-center slide-in">
+            <div class="bg-indigo-50 p-6 rounded-full text-indigo-600 mb-6">
+                <i class="fas fa-user-astronaut text-5xl"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">¡Hola, Experto!</h2>
+            <p class="text-slate-500 mb-8">Tienes 5 preguntas para demostrar que dominas el arte de la portabilidad. ¿Listo?</p>
+            <button onclick="startQuiz()" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition-all text-lg">
+                Comenzar Examen
+            </button>
+        </div>
+
+        <!-- PANTALLA DE PREGUNTAS -->
+        <div id="quiz-screen" class="hidden flex-1 flex flex-col p-6 slide-in">
+            <div class="flex justify-between items-center mb-6">
+                <span class="text-xs font-bold text-slate-400 tracking-widest">PREGUNTA <span id="q-number">1</span>/5</span>
+                <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">Puntos: <span id="score-display">0</span></span>
+            </div>
+
+            <h3 id="question-text" class="text-xl font-bold text-slate-800 mb-8 leading-relaxed">
+                <!-- Pregunta insertada por JS -->
+            </h3>
+
+            <div id="answers-container" class="space-y-4 flex-1">
+                <!-- Botones insertados por JS -->
+            </div>
+        </div>
+
+        <!-- PANTALLA DE RESULTADOS -->
+        <div id="result-screen" class="hidden flex-1 flex flex-col items-center justify-center p-8 text-center slide-in">
+            <div id="result-icon" class="mb-6 text-6xl"></div>
+            <h2 id="result-title" class="text-3xl font-black text-slate-800 mb-2"></h2>
+            <p id="result-msg" class="text-slate-500 mb-8"></p>
+            
+            <div class="w-full bg-slate-50 rounded-2xl p-6 border-2 border-slate-100 mb-8">
+                <p class="text-sm text-slate-400 uppercase font-bold">Puntaje Final</p>
+                <p class="text-5xl font-black text-indigo-600 mt-2"><span id="final-score">0</span>/100</p>
+            </div>
+
+            <button onclick="location.reload()" class="w-full bg-slate-800 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-slate-900 transition-all">
+                Intentar de nuevo
+            </button>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-4 text-center text-slate-300 text-[10px] border-t border-slate-100">
+            Formación AIDA • Manuel Loo Lira
+        </div>
+
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "En la fase de ATENCIÓN, ¿cuánto tiempo tienes para evitar que el cliente cuelgue?",
+                answers: [
+                    "30 segundos para presentarme",
+                    "5 segundos para romper el patrón",
+                    "1 minuto si hablo rápido"
+                ],
+                correct: 1, // Índice de la respuesta correcta (0, 1, 2)
+                points: 20
+            },
+            {
+                question: "Estás en la fase de INTERÉS. ¿Qué pregunta es más efectiva?",
+                answers: [
+                    "¿Le gustaría comprar nuestro plan de 50GB?",
+                    "¿Conoce nuestra promoción del mes?",
+                    "¿Cuándo fue la última vez que se quedó sin datos a fin de mes?"
+                ],
+                correct: 2,
+                points: 20
+            },
+            {
+                question: "En la fase de DESEO, no vendemos 'Gigas', vendemos:",
+                answers: [
+                    "La antena 5G",
+                    "Libertad y entretenimiento sin límites",
+                    "Un chip de plástico"
+                ],
+                correct: 1,
+                points: 20
+            },
+            {
+                question: "¿Cuál es la técnica correcta para el CIERRE (Acción)?",
+                answers: [
+                    "Preguntar: ¿Lo quiere pensar?",
+                    "Cierre Asuntivo de Doble Opción (Casa u Oficina)",
+                    "Esperar a que el cliente diga que sí"
+                ],
+                correct: 1,
+                points: 20
+            },
+            {
+                question: "Según el consejo del formador, ¿qué debes hacer inmediatamente después de decir el precio?",
+                answers: [
+                    "Seguir explicando beneficios",
+                    "Guardar silencio absoluto",
+                    "Preguntar si le parece caro"
+                ],
+                correct: 1,
+                points: 20
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let canAnswer = false;
+
+        function startQuiz() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            canAnswer = true;
+            const q = questions[currentQuestion];
+            
+            // Actualizar UI
+            document.getElementById('q-number').innerText = currentQuestion + 1;
+            document.getElementById('progress-bar').style.width = `${((currentQuestion) / questions.length) * 100}%`;
+            document.getElementById('question-text').innerText = q.question;
+            
+            // Generar botones
+            const container = document.getElementById('answers-container');
+            container.innerHTML = '';
+            
+            q.answers.forEach((ans, index) => {
+                const btn = document.createElement('button');
+                btn.className = "answer-btn w-full text-left p-4 rounded-xl border-2 border-slate-200 text-slate-600 font-medium hover:border-indigo-300 hover:bg-indigo-50";
+                btn.innerText = ans;
+                btn.onclick = () => selectAnswer(index, btn);
+                container.appendChild(btn);
+            });
+        }
+
+        function selectAnswer(index, btn) {
+            if(!canAnswer) return;
+            canAnswer = false;
+
+            const correctIndex = questions[currentQuestion].correct;
+            const buttons = document.querySelectorAll('.answer-btn');
+
+            if (index === correctIndex) {
+                // Respuesta Correcta
+                score += questions[currentQuestion].points;
+                document.getElementById('score-display').innerText = score;
+                btn.classList.add('correct-anim');
+                btn.innerHTML += ' <i class="fas fa-check ml-2"></i>';
+            } else {
+                // Respuesta Incorrecta
+                btn.classList.add('wrong-anim');
+                btn.innerHTML += ' <i class="fas fa-times ml-2"></i>';
+                // Mostrar la correcta
+                buttons[correctIndex].classList.add('correct-anim');
+            }
+
+            // Esperar y pasar a la siguiente
+            setTimeout(() => {
+                currentQuestion++;
+                if (currentQuestion < questions.length) {
+                    loadQuestion();
+                } else {
+                    showResults();
+                }
+            }, 1200);
+        }
+
+        function showResults() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('progress-bar').style.width = '100%';
+            
+            const finalScoreEl = document.getElementById('final-score');
+            const iconEl = document.getElementById('result-icon');
+            const titleEl = document.getElementById('result-title');
+            const msgEl = document.getElementById('result-msg');
+
+            // Animación de conteo
+            let tempScore = 0;
+            const interval = setInterval(() => {
+                tempScore++;
+                finalScoreEl.innerText = tempScore;
+                if(tempScore >= score) clearInterval(interval);
+            }, 20);
+
+            if (score >= 80) {
+                iconEl.innerHTML = '<i class="fas fa-trophy text-yellow-400 animate-bounce"></i>';
+                titleEl.innerText = "¡EXCELENTE!";
+                titleEl.className = "text-3xl font-black text-green-600 mb-2";
+                msgEl.innerText = "Eres un maestro del modelo AIDA. Estás listo para romper récords de ventas.";
+            } else if (score >= 60) {
+                iconEl.innerHTML = '<i class="fas fa-thumbs-up text-blue-400"></i>';
+                titleEl.innerText = "BIEN HECHO";
+                titleEl.className = "text-3xl font-black text-blue-600 mb-2";
+                msgEl.innerText = "Tienes los conceptos claros, pero repasa los cierres para ser infalible.";
+            } else {
+                iconEl.innerHTML = '<i class="fas fa-book-reader text-slate-400"></i>';
+                titleEl.innerText = "A REPASAR";
+                titleEl.className = "text-3xl font-black text-slate-600 mb-2";
+                msgEl.innerText = "Vuelve a revisar el material del taller. La práctica hace al maestro.";
+            }
+        }
+    </script>
+</body>
+</html>

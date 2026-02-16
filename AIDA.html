@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taller AIDA - Manuel Loo Lira</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; animation: fadeIn 0.4s ease-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        .script-card { background: #f8fafc; border-left: 5px solid #4f46e5; }
+        .badge { @apply px-3 py-1 rounded-full text-xs font-bold uppercase; }
+        
+        /* Estilos para la dinámica de la introducción */
+        .phase-bubble { transition: all 0.3s ease; cursor: pointer; }
+        .phase-bubble:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .drop-zone { border: 2px dashed #e2e8f0; min-height: 80px; transition: all 0.3s; cursor: pointer; }
+        .drop-zone.filled { border: 2px solid transparent; background: white; }
+
+        /* Estilos del Aviso Flotante */
+        #feedback-box {
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: scale(0);
+            opacity: 0;
+            pointer-events: none;
+        }
+        #feedback-box.show {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        /* Animación de Alerta del Cronómetro Global */
+        @keyframes pulse-red {
+            0%, 100% { color: #334155; transform: scale(1); }
+            50% { color: #ef4444; transform: scale(1.2); }
+        }
+        .timer-alert {
+            animation: pulse-red 0.5s ease-in-out 6; /* Parpadeo breve */
+        }
+        
+        /* Cronómetro Flotante Global */
+        #global-timer-container {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen pb-20">
+
+    <!-- BOTÓN PANTALLA COMPLETA (Disimulado) -->
+    <button onclick="toggleFullscreen()" id="fullscreen-btn" class="fixed bottom-6 left-6 w-10 h-10 rounded-full bg-slate-200 text-slate-500 hover:bg-slate-800 hover:text-white transition-all shadow-md z-50 flex items-center justify-center opacity-75 hover:opacity-100" title="Pantalla Completa">
+        <i class="fas fa-expand"></i>
+    </button>
+
+    <!-- CRONÓMETRO FLOTANTE GLOBAL -->
+    <div id="global-timer-container" class="fixed bottom-6 right-6 bg-white pl-5 pr-2 py-2 rounded-full shadow-2xl border-2 border-slate-200 z-50 flex items-center gap-4">
+        <div class="flex flex-col items-end">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Tiempo</span>
+            <div id="global-display" class="font-mono text-2xl font-bold text-slate-700 leading-none mt-1">15:00</div>
+        </div>
+        <button onclick="startGlobalTimer()" id="btn-global-start" class="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg hover:scale-105 active:scale-95">
+            <i class="fas fa-play text-sm ml-1"></i>
+        </button>
+    </div>
+
+    <!-- Navegación Superior -->
+    <nav class="bg-indigo-900 text-white shadow-2xl sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex flex-col lg:flex-row justify-between items-center py-4 gap-4">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-headset text-2xl text-indigo-300"></i>
+                    <div>
+                        <h1 class="text-xl font-bold tracking-tight leading-none">Ventas Telefónicas de Alto Impacto</h1>
+                        <p class="text-xs text-indigo-300 font-medium mt-1">Formador: Manuel Loo Lira</p>
+                    </div>
+                </div>
+                
+                <div class="flex flex-wrap justify-center gap-2">
+                    <button onclick="showTab('presentacion')" id="tab-presentacion" class="tab-btn px-4 py-2 rounded-full text-sm font-medium hover:bg-white/10 transition-all">Inicio</button>
+                    <button onclick="showTab('introduccion')" id="tab-introduccion" class="tab-btn px-4 py-2 rounded-full text-sm font-medium hover:bg-white/10 transition-all">Introducción</button>
+                    <div class="hidden lg:block w-px h-6 bg-indigo-700 mx-2 self-center"></div>
+                    <button onclick="showTab('atencion')" id="tab-atencion" class="tab-btn px-4 py-2 rounded-full text-sm font-bold bg-yellow-500 text-indigo-900 hover:scale-105 transition-all">A</button>
+                    <button onclick="showTab('interes')" id="tab-interes" class="tab-btn px-4 py-2 rounded-full text-sm font-bold bg-blue-500 text-white hover:scale-105 transition-all">I</button>
+                    <button onclick="showTab('deseo')" id="tab-deseo" class="tab-btn px-4 py-2 rounded-full text-sm font-bold bg-orange-500 text-white hover:scale-105 transition-all">D</button>
+                    <button onclick="showTab('accion')" id="tab-accion" class="tab-btn px-4 py-2 rounded-full text-sm font-bold bg-green-500 text-white hover:scale-105 transition-all">A</button>
+                    <div class="hidden lg:block w-px h-6 bg-indigo-700 mx-2 self-center"></div>
+                    <button onclick="showTab('estudiantes')" id="tab-estudiantes" class="tab-btn px-4 py-2 rounded-full text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 transition-all">Consejos</button>
+                    <button onclick="showTab('resumen')" id="tab-resumen" class="tab-btn px-4 py-2 rounded-full text-sm font-medium hover:bg-white/10 transition-all">Resumen</button>
+                    <button onclick="showTab('examen')" id="tab-examen" class="tab-btn px-4 py-2 rounded-full text-sm font-bold bg-red-600 text-white hover:bg-red-500 transition-all">Examen</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto p-4 md:p-12">
+
+        <!-- 1. PRESENTACIÓN -->
+        <div id="presentacion" class="tab-content">
+            <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200">
+                <div class="bg-indigo-700 p-16 text-center text-white relative">
+                    <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                        <i class="fas fa-signal text-[200px] -rotate-12 translate-x-10 translate-y-10"></i>
+                    </div>
+                    <h2 class="text-5xl font-black mb-6 uppercase tracking-tighter">MÁSTER EN PORTABILIDAD</h2>
+                    <p class="text-2xl text-indigo-100 font-light max-w-2xl mx-auto italic">Ventas Telefónicas Bajo el Método AIDA</p>
+                </div>
+                <div class="p-10 grid md:grid-cols-2 gap-8 items-center">
+                    <div>
+                        <h3 class="text-2xl font-bold mb-4">¿Qué aprenderás hoy?</h3>
+                        <ul class="space-y-4">
+                            <li class="flex items-center gap-3 font-medium"><i class="fas fa-check-circle text-green-500"></i> Dominar los primeros 5 segundos de la llamada.</li>
+                            <li class="flex items-center gap-3 font-medium"><i class="fas fa-check-circle text-green-500"></i> Convertir quejas en oportunidades de venta.</li>
+                            <li class="flex items-center gap-3 font-medium"><i class="fas fa-check-circle text-green-500"></i> Aplicar cierres asuntivos e irresistibles.</li>
+                        </ul>
+                    </div>
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-dashed border-slate-300 text-center">
+                        <p class="text-slate-500 italic mb-2">"La diferencia entre un operador y un vendedor es la estructura de su mensaje."</p>
+                        <p class="text-indigo-600 font-bold">Formador: Manuel Loo Lira</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. INTRODUCCIÓN (CON DINÁMICA INTERACTIVA) -->
+        <div id="introduccion" class="tab-content">
+            <div class="bg-white p-10 rounded-3xl shadow-lg border border-slate-200 relative">
+                <h2 class="text-3xl font-bold mb-6 flex items-center gap-3 text-indigo-800">
+                    <i class="fas fa-stream"></i> El Viaje del Cliente: AIDA
+                </h2>
+                
+                <div class="grid md:grid-cols-1 gap-8 mb-10 text-center">
+                    <div class="bg-indigo-50 p-6 rounded-2xl text-slate-700">
+                        <p class="text-lg">El modelo AIDA es el <strong>mapa mental</strong> del vendedor. Pero para usar un mapa, primero debemos conocer el orden correcto de las estaciones.</p>
+                        <p class="font-bold text-indigo-800">Dinámica de clase: Haz clic en las fases para ordenarlas correctamente.</p>
+                    </div>
+                </div>
+
+                <!-- Zona de Mezcla (Desordenado) -->
+                <div class="mb-12">
+                    <h4 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Fases disponibles:</h4>
+                    <div id="scrambled-container" class="flex flex-wrap gap-4 justify-center py-6 bg-slate-50 rounded-2xl border border-slate-100 min-h-[120px]">
+                        <!-- JS Inyecta aquí -->
+                    </div>
+                </div>
+
+                <!-- AVISO FLOTANTE -->
+                <div id="feedback-box" class="flex justify-center mb-6">
+                    <div id="feedback-text" class="px-10 py-3 rounded-full font-black text-xl text-white shadow-xl tracking-widest animate-bounce">
+                        ¡EXCELENTE!
+                    </div>
+                </div>
+
+                <!-- Zona de Línea de Tiempo (Ordenado) -->
+                <div class="relative pt-4">
+                    <h4 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 text-center italic underline decoration-indigo-200">El Camino del Éxito (Haz clic para devolver):</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div id="slot-0" onclick="removeFromSlot(0)" class="drop-zone rounded-2xl flex items-center justify-center italic text-slate-300 text-sm">Paso 1</div>
+                        <div id="slot-1" onclick="removeFromSlot(1)" class="drop-zone rounded-2xl flex items-center justify-center italic text-slate-300 text-sm">Paso 2</div>
+                        <div id="slot-2" onclick="removeFromSlot(2)" class="drop-zone rounded-2xl flex items-center justify-center italic text-slate-300 text-sm">Paso 3</div>
+                        <div id="slot-3" onclick="removeFromSlot(3)" class="drop-zone rounded-2xl flex items-center justify-center italic text-slate-300 text-sm">Paso 4</div>
+                    </div>
+                    <div class="mt-10 text-center">
+                        <button onclick="resetIntroGame()" class="text-indigo-600 font-bold hover:underline text-sm uppercase tracking-widest">
+                            <i class="fas fa-sync-alt mr-2"></i>Reiniciar dinámica
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FASE A: ATENCIÓN (INFORMACIÓN DETALLADA) -->
+        <div id="atencion" class="tab-content">
+            <div class="bg-white rounded-3xl shadow-lg overflow-hidden border-t-8 border-yellow-400">
+                <div class="p-10">
+                    <span class="badge bg-yellow-100 text-yellow-700 mb-2">Fase 1</span>
+                    <h2 class="text-4xl font-black text-slate-800 mb-4 uppercase italic">Atención</h2>
+                    <div class="grid md:grid-cols-2 gap-10">
+                        <div>
+                            <h4 class="font-bold text-lg mb-2">Objetivo Crítico:</h4>
+                            <p class="text-slate-600 mb-6">Ganar los primeros <strong>5 segundos</strong>. Debes sonar diferente a las otras 10 llamadas que el cliente recibió hoy.</p>
+                            <div class="bg-yellow-50 p-6 rounded-2xl border border-yellow-200">
+                                <h4 class="font-bold text-yellow-800 mb-2 underline">La Psicología</h4>
+                                <p class="text-sm text-yellow-900 leading-relaxed">El cerebro humano filtra llamadas comerciales como "amenaza de pérdida de tiempo". Al mencionar <strong>beneficios tecnológicos o ahorro inmediato</strong>, el filtro se relaja.</p>
+                            </div>
+                        </div>
+                        <div class="script-card p-8 rounded-2xl">
+                            <h4 class="text-indigo-800 font-bold mb-4 uppercase tracking-widest text-xs">Script de Poder:</h4>
+                            <p class="text-xl italic text-slate-700 leading-relaxed">"¡Hola! Le llamo porque su línea ha sido seleccionada para una <strong>actualización masiva a Red 5G Premium</strong> sin costo adicional. Mi labor es verificar que no esté pagando de más por tecnología antigua."</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FASE I: INTERÉS (INFORMACIÓN DETALLADA) -->
+        <div id="interes" class="tab-content">
+            <div class="bg-white rounded-3xl shadow-lg overflow-hidden border-t-8 border-blue-500">
+                <div class="p-10">
+                    <span class="badge bg-blue-100 text-blue-700 mb-2">Fase 2</span>
+                    <h2 class="text-4xl font-black text-slate-800 mb-4 uppercase italic">Interés</h2>
+                    <div class="grid md:grid-cols-2 gap-10">
+                        <div>
+                            <h4 class="font-bold text-lg mb-2">Objetivo Crítico:</h4>
+                            <p class="text-slate-600 mb-6">Hacer que el cliente acepte que tiene un <strong>problema o necesidad</strong> (aunque no lo supiera).</p>
+                            <div class="bg-blue-50 p-6 rounded-2xl border border-blue-200">
+                                <h4 class="font-bold text-blue-800 mb-2 underline">Técnica de Sondeo</h4>
+                                <p class="text-sm text-blue-900 leading-relaxed">No vendas el plan. Vende la solución a su frustración actual (señal lenta, pocos gigas, cobros extra).</p>
+                            </div>
+                        </div>
+                        <div class="script-card p-8 rounded-2xl">
+                            <h4 class="text-indigo-800 font-bold mb-4 uppercase tracking-widest text-xs">Preguntas de Oro:</h4>
+                            <ul class="text-lg italic text-slate-700 space-y-4">
+                                <li>• "¿Cuándo fue la última vez que se quedó sin datos antes de fin de mes?"</li>
+                                <li>• "¿Qué tan frustrante es que se le corte la videollamada por falta de señal en interiores?"</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FASE D: DESEO (INFORMACIÓN DETALLADA) -->
+        <div id="deseo" class="tab-content">
+            <div class="bg-white rounded-3xl shadow-lg overflow-hidden border-t-8 border-orange-500">
+                <div class="p-10">
+                    <span class="badge bg-orange-100 text-orange-700 mb-2">Fase 3</span>
+                    <h2 class="text-4xl font-black text-slate-800 mb-4 uppercase italic">Deseo</h2>
+                    <div class="grid md:grid-cols-2 gap-10">
+                        <div>
+                            <h4 class="font-bold text-lg mb-2">Objetivo Crítico:</h4>
+                            <p class="text-slate-600 mb-6">Transformar las características técnicas en <strong>emociones de libertad y estatus</strong>.</p>
+                            <div class="bg-orange-50 p-6 rounded-2xl border border-orange-200">
+                                <h4 class="font-bold text-orange-800 mb-2 underline">Valor Irresistible</h4>
+                                <p class="text-sm text-orange-900 leading-relaxed">Menciona beneficios extra: Suscripciones gratis, Apps ilimitadas o Roaming. Haz que el cambio parezca un <strong>regalo</strong>, no una compra.</p>
+                            </div>
+                        </div>
+                        <div class="script-card p-8 rounded-2xl">
+                            <h4 class="text-indigo-800 font-bold mb-4 uppercase tracking-widest text-xs">El Gancho Irresistible:</h4>
+                            <p class="text-xl italic text-slate-700 leading-relaxed">"Imagine navegar con <strong>Gigas Ilimitados Reales</strong> sin bajar la velocidad. Además, le incluiremos Disney+ gratis por 6 meses para que disfrute con su familia."</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FASE A: ACCIÓN (INFORMACIÓN DETALLADA) -->
+        <div id="accion" class="tab-content">
+            <div class="bg-white rounded-3xl shadow-lg overflow-hidden border-t-8 border-green-500">
+                <div class="p-10">
+                    <span class="badge bg-green-100 text-green-700 mb-2">Fase 4</span>
+                    <h2 class="text-4xl font-black text-slate-800 mb-4 uppercase italic">Acción</h2>
+                    <div class="grid md:grid-cols-2 gap-10">
+                        <div>
+                            <h4 class="font-bold text-lg mb-2">Objetivo Crítico:</h4>
+                            <p class="text-slate-600 mb-6">Lograr el "Sí" mediante la <strong>eliminación de dudas</strong> finales. El cierre debe ser un paso administrativo simple.</p>
+                            <div class="bg-green-50 p-6 rounded-2xl border border-green-200">
+                                <h4 class="font-bold text-green-800 mb-2 underline">Cierre Asuntivo</h4>
+                                <p class="text-sm text-green-900 leading-relaxed">No preguntes si quiere. Pregunta <strong>cómo</strong> lo quiere. Esto reduce la fricción de la decisión.</p>
+                            </div>
+                        </div>
+                        <div class="script-card p-8 rounded-2xl">
+                            <h4 class="text-indigo-800 font-bold mb-4 uppercase tracking-widest text-xs">Cierre de Doble Opción:</h4>
+                            <p class="text-xl italic text-slate-700 leading-relaxed">"¿A qué dirección le envío su nuevo chip para que empiece a disfrutar hoy mismo? <strong>¿A su oficina o a su domicilio particular?</strong>"</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONSEJOS -->
+        <div id="estudiantes" class="tab-content">
+            <div class="bg-emerald-700 p-10 rounded-3xl text-white shadow-2xl">
+                <h2 class="text-3xl font-bold mb-8 flex items-center gap-3">
+                    <i class="fas fa-lightbulb"></i> Recomendaciones para el Éxito
+                </h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-white/10 p-6 rounded-2xl hover:bg-white/20 transition-all cursor-default">
+                        <h4 class="font-bold text-xl mb-2">1. Sonrisa Telefónica</h4>
+                        <p class="text-emerald-100 text-sm">Tu interlocutor no te ve, pero siente tu expresión. Sonreír relaja las cuerdas vocales y transmite confianza instantánea.</p>
+                    </div>
+                    <div class="bg-white/10 p-6 rounded-2xl hover:bg-white/20 transition-all cursor-default">
+                        <h4 class="font-bold text-xl mb-2">2. El Poder del Silencio</h4>
+                        <p class="text-emerald-100 text-sm">Tras hacer una pregunta de sondeo o lanzar el precio, ¡Calla! El que habla primero después de la oferta, pierde.</p>
+                    </div>
+                    <div class="bg-white/10 p-6 rounded-2xl hover:bg-white/20 transition-all cursor-default">
+                        <h4 class="font-bold text-xl mb-2">3. Experiencia = Análisis</h4>
+                        <p class="text-emerald-100 text-sm">Si no vendes, no te frustres. Pregúntate: "¿En qué letra de AIDA fallé?". Ajusta y vuelve a intentar con el siguiente.</p>
+                    </div>
+                    <div class="bg-white/10 p-6 rounded-2xl hover:bg-white/20 transition-all cursor-default">
+                        <h4 class="font-bold text-xl mb-2">4. Rapport Inmediato</h4>
+                        <p class="text-emerald-100 text-sm">Adapta tu velocidad al hablar a la del cliente. Si él habla lento, baja tu ritmo. Si es acelerado, sé directo y ágil.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESUMEN -->
+        <div id="resumen" class="tab-content">
+            <div class="bg-white p-10 rounded-3xl shadow-xl border border-slate-200">
+                <h2 class="text-3xl font-bold mb-8 text-indigo-900 border-b pb-4">Lo Aprendido en el Taller</h2>
+                <div class="space-y-6">
+                    <div class="flex gap-4 items-start">
+                        <div class="bg-indigo-100 text-indigo-700 font-bold p-3 rounded-lg w-12 text-center">1</div>
+                        <div>
+                            <h4 class="font-bold text-lg text-indigo-700">Modelo AIDA</h4>
+                            <p class="text-slate-600 text-sm">Método estructurado (Atención, Interés, Deseo, Acción) para guiar la psicología del cliente desde la interrupción hasta el cierre.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 items-start">
+                        <div class="bg-indigo-100 text-indigo-700 font-bold p-3 rounded-lg w-12 text-center">2</div>
+                        <div>
+                            <h4 class="font-bold text-lg text-indigo-700">Regla de los 5 Segundos</h4>
+                            <p class="text-slate-600 text-sm">Importancia crítica de romper el patrón mental al inicio de la llamada con un gancho disruptivo.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 items-start">
+                        <div class="bg-indigo-100 text-indigo-700 font-bold p-3 rounded-lg w-12 text-center">3</div>
+                        <div>
+                            <h4 class="font-bold text-lg text-indigo-700">Escucha Activa</h4>
+                            <p class="text-slate-600 text-sm">Vender no es hablar, es preguntar. Identificar el "dolor" del cliente es la clave para generar Interés.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 items-start">
+                        <div class="bg-indigo-100 text-indigo-700 font-bold p-3 rounded-lg w-12 text-center">4</div>
+                        <div>
+                            <h4 class="font-bold text-lg text-indigo-700">Beneficios sobre Características</h4>
+                            <p class="text-slate-600 text-sm">En la fase de Deseo, traducimos datos técnicos (gigas) en emociones (libertad, entretenimiento familiar).</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 items-start">
+                        <div class="bg-indigo-100 text-indigo-700 font-bold p-3 rounded-lg w-12 text-center">5</div>
+                        <div>
+                            <h4 class="font-bold text-lg text-indigo-700">Cierre Asuntivo</h4>
+                            <p class="text-slate-600 text-sm">Técnica de Acción donde se asume la venta y se ofrece una doble alternativa administrativa, eliminando la opción del "No".</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 items-start">
+                        <div class="bg-indigo-100 text-indigo-700 font-bold p-3 rounded-lg w-12 text-center">6</div>
+                        <div>
+                            <h4 class="font-bold text-lg text-indigo-700">Consejo</h4>
+                            <p class="text-slate-600 text-sm">Recuerda que la venta es una transferencia de entusiasmo. Mantén tu energía alta, la resiliencia firme y la sonrisa siempre presente, incluso a través del teléfono.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- EXAMEN (QR) -->
+        <div id="examen" class="tab-content">
+            <div class="bg-white p-16 rounded-3xl shadow-xl border border-slate-200 text-center flex flex-col items-center">
+                <h2 class="text-4xl font-bold text-slate-800 mb-6">Evaluación Final</h2>
+                <p class="text-slate-500 mb-8 max-w-lg">Escanea el código QR con tu dispositivo móvil para acceder al examen de certificación.</p>
+                <div class="bg-white p-4 rounded-xl shadow-lg border border-slate-100 inline-block mb-6">
+                    <!-- QR Placeholder Generado Dinámicamente -->
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=ExamenAIDA_Portabilidad" alt="QR Examen" class="rounded-lg">
+                </div>
+                <span class="text-xs text-slate-400 uppercase tracking-widest font-bold">Acceso Seguro</span>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="mt-12 p-8 bg-slate-100 text-slate-500 text-center text-xs border-t border-slate-200">
+        <p>Herramienta Didáctica - Modelo AIDA para Portabilidad</p>
+        <p class="mt-1 font-bold">Formador: Manuel Loo Lira</p>
+    </footer>
+
+    <script>
+        // --- LÓGICA DE PANTALLA COMPLETA ---
+        function toggleFullscreen() {
+            const btnIcon = document.querySelector('#fullscreen-btn i');
+            
+            if (!document.fullscreenElement) {
+                // Intentar entrar en pantalla completa
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen()
+                        .then(() => {
+                            btnIcon.classList.remove('fa-expand');
+                            btnIcon.classList.add('fa-compress');
+                        })
+                        .catch((err) => {
+                            console.log("Error al intentar pantalla completa:", err);
+                        });
+                }
+            } else {
+                // Salir de pantalla completa
+                if (document.exitFullscreen) {
+                    document.exitFullscreen()
+                        .then(() => {
+                            btnIcon.classList.remove('fa-compress');
+                            btnIcon.classList.add('fa-expand');
+                        })
+                        .catch((err) => {
+                             console.log("Error al salir de pantalla completa:", err);
+                        });
+                }
+            }
+        }
+
+        // --- CRONÓMETRO GLOBAL ---
+        let globalTime = 15 * 60; // 15 minutos en segundos
+        let globalInterval;
+        let isGlobalRunning = false;
+
+        function startGlobalTimer() {
+            const btn = document.getElementById('btn-global-start');
+            
+            if (isGlobalRunning) {
+                return;
+            }
+
+            isGlobalRunning = true;
+            btn.classList.add('bg-slate-400', 'cursor-not-allowed');
+            btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+            
+            clearInterval(globalInterval);
+            globalTime = 15 * 60;
+            updateGlobalDisplay();
+
+            globalInterval = setInterval(() => {
+                globalTime--;
+                updateGlobalDisplay();
+                checkGlobalAlerts();
+
+                if (globalTime <= 0) {
+                    clearInterval(globalInterval);
+                    isGlobalRunning = false;
+                }
+            }, 1000);
+        }
+
+        function updateGlobalDisplay() {
+            const minutes = Math.floor(globalTime / 60);
+            const seconds = globalTime % 60;
+            const display = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            document.getElementById('global-display').innerText = display;
+        }
+
+        function checkGlobalAlerts() {
+            const displayEl = document.getElementById('global-display');
+            
+            // 5 minutos transcurridos = quedan 10 minutos (600 seg)
+            if (globalTime === 10 * 60) {
+                triggerGlobalAlert(displayEl);
+            }
+            
+            // Quedan 5 minutos (300 seg)
+            if (globalTime === 5 * 60) {
+                triggerGlobalAlert(displayEl);
+                displayEl.classList.remove('text-slate-700');
+                displayEl.classList.add('text-red-600');
+            }
+        }
+
+        function triggerGlobalAlert(element) {
+            element.classList.add('timer-alert');
+            setTimeout(() => {
+                element.classList.remove('timer-alert');
+            }, 3000); 
+        }
+
+        // --- LÓGICA DE INTRODUCCIÓN (JUEGO) ---
+        const phasesData = [
+            { char: 'A', name: 'Atención', color: 'bg-yellow-400', textColor: 'text-indigo-900', order: 0 },
+            { char: 'I', name: 'Interés', color: 'bg-blue-500', textColor: 'text-white', order: 1 },
+            { char: 'D', name: 'Deseo', color: 'bg-orange-500', textColor: 'text-white', order: 2 },
+            { char: 'A', name: 'Acción', color: 'bg-green-500', textColor: 'text-white', order: 3 }
+        ];
+
+        let slots = [null, null, null, null];
+        let currentOrderIndex = 0;
+
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('ring-4', 'ring-indigo-300', 'scale-110');
+            });
+            
+            document.getElementById(tabId).classList.add('active');
+            const btn = document.getElementById('tab-' + tabId);
+            if(btn) btn.classList.add('scale-110');
+            
+            if (tabId === 'introduccion') {
+                initIntroGame();
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showFeedback(text, isCorrect) {
+            const notice = document.getElementById('feedback-box');
+            const feedbackText = document.getElementById('feedback-text');
+            
+            feedbackText.innerText = text;
+            feedbackText.className = `px-10 py-3 rounded-full font-black text-xl text-white shadow-xl tracking-widest ${isCorrect ? 'bg-emerald-500' : 'bg-red-500 animate-pulse'}`;
+            
+            notice.classList.add('show');
+            setTimeout(() => notice.classList.remove('show'), 1500);
+        }
+
+        function initIntroGame() {
+            const container = document.getElementById('scrambled-container');
+            container.innerHTML = '';
+            currentOrderIndex = 0;
+            slots = [null, null, null, null];
+            
+            for(let i=0; i<4; i++) {
+                const slot = document.getElementById(`slot-${i}`);
+                slot.innerHTML = `Paso ${i+1}`;
+                slot.className = "drop-zone rounded-2xl flex items-center justify-center italic text-slate-300 text-sm";
+            }
+
+            const shuffled = [...phasesData].sort(() => Math.random() - 0.5);
+            
+            shuffled.forEach((phase, idx) => {
+                const bubble = document.createElement('div');
+                bubble.id = `bubble-${phase.char}-${idx}`;
+                bubble.className = `${phase.color} ${phase.textColor} w-16 h-16 rounded-full flex items-center justify-center font-bold shadow-lg phase-bubble text-xl border-4 border-white`;
+                bubble.innerText = phase.char;
+                bubble.onclick = () => addToTimeline(phase, bubble.id);
+                container.appendChild(bubble);
+            });
+        }
+
+        function addToTimeline(phase, elementId) {
+            const expectedPhase = phasesData[currentOrderIndex];
+            
+            if (phase.order === expectedPhase.order) {
+                showFeedback("¡EXCELENTE!", true);
+                
+                const slot = document.getElementById(`slot-${currentOrderIndex}`);
+                slot.innerHTML = `
+                    <div class="${phase.color} ${phase.textColor} w-full h-full rounded-2xl flex flex-col items-center justify-center shadow-md animate-bounce">
+                        <span class="font-bold text-2xl">${phase.char}</span>
+                        <span class="text-[10px] uppercase font-black">${phase.name}</span>
+                    </div>
+                `;
+                slot.className = "drop-zone filled rounded-2xl h-20 shadow-lg";
+                
+                slots[currentOrderIndex] = { ...phase, originId: elementId };
+                
+                document.getElementById(elementId).style.visibility = 'hidden';
+                currentOrderIndex++;
+                
+            } else {
+                showFeedback("¡INTÉNTALO NUEVAMENTE!", false);
+            }
+        }
+
+        function removeFromSlot(index) {
+            if (slots[index]) {
+                const phaseInfo = slots[index];
+                document.getElementById(phaseInfo.originId).style.visibility = 'visible';
+                
+                for (let i = index; i < 4; i++) {
+                    if (slots[i]) {
+                        document.getElementById(slots[i].originId).style.visibility = 'visible';
+                        slots[i] = null;
+                        const slot = document.getElementById(`slot-${i}`);
+                        slot.innerHTML = `Paso ${i+1}`;
+                        slot.className = "drop-zone rounded-2xl flex items-center justify-center italic text-slate-300 text-sm";
+                    }
+                }
+                currentOrderIndex = index;
+            }
+        }
+
+        function resetIntroGame() {
+            initIntroGame();
+        }
+
+        window.onload = () => showTab('presentacion');
+    </script>
+</body>
+</html>
