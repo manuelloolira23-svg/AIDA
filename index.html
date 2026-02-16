@@ -354,8 +354,8 @@
                 <h2 class="text-4xl font-bold text-slate-800 mb-6">Evaluación Final</h2>
                 <p class="text-slate-500 mb-8 max-w-lg">Escanea el código QR con tu dispositivo móvil para acceder al examen de certificación.</p>
                 <div class="bg-white p-4 rounded-xl shadow-lg border border-slate-100 inline-block mb-6">
-                    <!-- QR Placeholder Generado Dinámicamente -->
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=ExamenAIDA_Portabilidad" alt="QR Examen" class="rounded-lg">
+                    <!-- QR que apunta a la página del examen (Examen.html) -->
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://manuelloolira23-svg.github.io/AIDA/Examen.html" alt="QR Examen" class="rounded-lg">
                 </div>
                 <span class="text-xs text-slate-400 uppercase tracking-widest font-bold">Acceso Seguro</span>
             </div>
@@ -373,29 +373,47 @@
         function toggleFullscreen() {
             const btnIcon = document.querySelector('#fullscreen-btn i');
             
-            if (!document.fullscreenElement) {
+            // Verificamos si hay algún elemento en pantalla completa actualmente
+            // Nota: Se han añadido prefijos para mayor compatibilidad, aunque el estándar es document.fullscreenElement
+            const isFullscreen = document.fullscreenElement || 
+                               document.webkitFullscreenElement || 
+                               document.mozFullScreenElement || 
+                               document.msFullscreenElement;
+
+            if (!isFullscreen) {
                 // Intentar entrar en pantalla completa
-                if (document.documentElement.requestFullscreen) {
-                    document.documentElement.requestFullscreen()
-                        .then(() => {
-                            btnIcon.classList.remove('fa-expand');
-                            btnIcon.classList.add('fa-compress');
-                        })
-                        .catch((err) => {
-                            console.log("Error al intentar pantalla completa:", err);
-                        });
+                const elem = document.documentElement;
+                try {
+                    if (elem.requestFullscreen) {
+                        elem.requestFullscreen();
+                    } else if (elem.webkitRequestFullscreen) { /* Safari */
+                        elem.webkitRequestFullscreen();
+                    } else if (elem.msRequestFullscreen) { /* IE11 */
+                        elem.msRequestFullscreen();
+                    }
+                    
+                    // Cambiar icono
+                    btnIcon.classList.remove('fa-expand');
+                    btnIcon.classList.add('fa-compress');
+                } catch (err) {
+                    console.log("Error al intentar pantalla completa:", err);
                 }
             } else {
                 // Salir de pantalla completa
-                if (document.exitFullscreen) {
-                    document.exitFullscreen()
-                        .then(() => {
-                            btnIcon.classList.remove('fa-compress');
-                            btnIcon.classList.add('fa-expand');
-                        })
-                        .catch((err) => {
-                             console.log("Error al salir de pantalla completa:", err);
-                        });
+                try {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.webkitExitFullscreen) { /* Safari */
+                        document.webkitExitFullscreen();
+                    } else if (document.msExitFullscreen) { /* IE11 */
+                        document.msExitFullscreen();
+                    }
+                    
+                    // Cambiar icono
+                    btnIcon.classList.remove('fa-compress');
+                    btnIcon.classList.add('fa-expand');
+                } catch (err) {
+                     console.log("Error al salir de pantalla completa:", err);
                 }
             }
         }
@@ -509,12 +527,14 @@
             currentOrderIndex = 0;
             slots = [null, null, null, null];
             
+            // Limpiar slots visualmente
             for(let i=0; i<4; i++) {
                 const slot = document.getElementById(`slot-${i}`);
                 slot.innerHTML = `Paso ${i+1}`;
                 slot.className = "drop-zone rounded-2xl flex items-center justify-center italic text-slate-300 text-sm";
             }
 
+            // Mezclar fases
             const shuffled = [...phasesData].sort(() => Math.random() - 0.5);
             
             shuffled.forEach((phase, idx) => {
@@ -528,9 +548,11 @@
         }
 
         function addToTimeline(phase, elementId) {
+            // Verificar si es la siguiente fase correcta en el orden A-I-D-A
             const expectedPhase = phasesData[currentOrderIndex];
             
             if (phase.order === expectedPhase.order) {
+                // CORRECTO
                 showFeedback("¡EXCELENTE!", true);
                 
                 const slot = document.getElementById(`slot-${currentOrderIndex}`);
@@ -542,12 +564,16 @@
                 `;
                 slot.className = "drop-zone filled rounded-2xl h-20 shadow-lg";
                 
+                // Guardar referencia para poder regresarlo
                 slots[currentOrderIndex] = { ...phase, originId: elementId };
                 
                 document.getElementById(elementId).style.visibility = 'hidden';
                 currentOrderIndex++;
+
+                // NOTA: Se eliminó la transición automática a petición del usuario.
                 
             } else {
+                // INCORRECTO
                 showFeedback("¡INTÉNTALO NUEVAMENTE!", false);
             }
         }
@@ -557,6 +583,7 @@
                 const phaseInfo = slots[index];
                 document.getElementById(phaseInfo.originId).style.visibility = 'visible';
                 
+                // Limpiar este slot y los siguientes para mantener consistencia
                 for (let i = index; i < 4; i++) {
                     if (slots[i]) {
                         document.getElementById(slots[i].originId).style.visibility = 'visible';
